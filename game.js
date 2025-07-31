@@ -1,7 +1,7 @@
 // Game configuration
 const config = {
-    width: 400,
-    height: 600,
+    width: 450,        // Increased from 400 for wider view
+    height: 700,       // Increased from 600 for taller view
     gravity: 0.4,      // Reduced from 0.5 for slower fall
     jumpPower: -13,    // Reduced from -15 for lower jumps
     moveSpeed: 3,      // Further reduced from 3.5
@@ -829,6 +829,20 @@ function init() {
 // Start game from intro screen
 function startGameFromIntro() {
     document.getElementById('introScreen').classList.add('hide');
+    
+    // Request iOS orientation permission if needed
+    if (gameState.isMobile && typeof DeviceOrientationEvent.requestPermission === 'function') {
+        DeviceOrientationEvent.requestPermission()
+            .then(response => {
+                if (response === 'granted') {
+                    window.addEventListener('deviceorientation', handleOrientation);
+                } else {
+                    alert('Tilt controls disabled. Use touch to move.');
+                }
+            })
+            .catch(console.error);
+    }
+    
     // Use demo roster data by default
     gameState.rosterData = [
         ['John', '7-15', '7-15', 'OFF', 'RN-Night', 'RN-Night'],
@@ -886,7 +900,7 @@ function parseCSV(text) {
 // Start game
 function startGame() {
     // Reset game state
-    gameState.player = new Player(config.width / 2 - 30, config.height - 120);
+    gameState.player = new Player(config.width / 2 - 30, config.height - 140);
     gameState.platforms = [];
     gameState.obstacles = [];
     gameState.powerUps = [];
@@ -906,7 +920,7 @@ function startGame() {
     }
     
     // Add starting platform directly under player (safe green platform)
-    gameState.platforms.push(new Platform(config.width / 2 - 30, config.height - 50, 'START', 'normal'));
+    gameState.platforms.push(new Platform(config.width / 2 - 30, config.height - 60, 'START', 'normal'));
     
     // Start game loop
     gameLoop();
@@ -1041,7 +1055,7 @@ function gameLoop() {
     const flyingMonsterChance = Math.min(0.005 + (gameState.score / 10000) * 0.01, 0.015); // 0.5% to 1.5%
     if (Math.random() < flyingMonsterChance && gameState.flyingMonsters.length < 3) {
         const monster = new FlyingMonster(
-            Math.random() * (config.width - 50),
+            Math.random() * (config.width - 70),
             gameState.camera.y - 50 // Spawn above the screen
         );
         gameState.flyingMonsters.push(monster);
