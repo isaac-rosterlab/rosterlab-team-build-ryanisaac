@@ -1,18 +1,19 @@
 const CACHE_NAME = 'roster-jump-v1';
+const BASE_PATH = '/rosterlab-team-build-ryanisaac';
 const urlsToCache = [
-  '/',
-  '/index.html',
-  '/game.js',
-  '/manifest.json',
-  '/Images/icons/icon.png',
-  '/Images/Doodle/state 1.png',
-  '/Images/Monsters/images.jpg',
-  '/Images/Monsters/IMG_5377.png',
-  '/Images/powerups/1631342884554.jpeg',
-  '/Images/powerups/QQUIG5yjsIHDnfAC7jzNFbOu4T91732796902043_200x200.png',
-  '/Images/rosterlab logo/logo.png.jpeg',
-  '/Images/start screen/start.png',
-  '/Images/death/Image (2).jpeg'
+  BASE_PATH + '/',
+  BASE_PATH + '/index.html',
+  BASE_PATH + '/game.js',
+  BASE_PATH + '/manifest.json',
+  BASE_PATH + '/Images/icons/icon.png',
+  BASE_PATH + '/Images/Doodle/state 1.png',
+  BASE_PATH + '/Images/Monsters/images.jpg',
+  BASE_PATH + '/Images/Monsters/IMG_5377.png',
+  BASE_PATH + '/Images/powerups/1631342884554.jpeg',
+  BASE_PATH + '/Images/powerups/QQUIG5yjsIHDnfAC7jzNFbOu4T91732796902043_200x200.png',
+  BASE_PATH + '/Images/rosterlab logo/logo.png.jpeg',
+  BASE_PATH + '/Images/start screen/start.png',
+  BASE_PATH + '/Images/death/Image (2).jpeg'
 ];
 
 // Install event - cache all necessary files
@@ -61,7 +62,7 @@ self.addEventListener('fetch', event => {
       })
       .catch(() => {
         // Offline fallback
-        return caches.match('/index.html');
+        return caches.match(BASE_PATH + '/index.html');
       })
   );
 });

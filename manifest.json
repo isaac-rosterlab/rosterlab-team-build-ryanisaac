@@ -2,7 +2,7 @@
   "name": "RosterLab Team Building Jump Game",
   "short_name": "RosterJump",
   "description": "A fun jumping game with roster management themes",
-  "start_url": "/",
+  "start_url": "/rosterlab-team-build-ryanisaac/",
   "display": "fullscreen",
   "orientation": "portrait",
   "background_color": "#FAFAFA",
