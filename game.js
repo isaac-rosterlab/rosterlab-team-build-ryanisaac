@@ -396,8 +396,8 @@ class Obstacle {
         this.x = x;
         this.y = y;
         this.type = type;
-        this.width = 60;  // Increased from 40
-        this.height = 60; // Increased from 40
+        this.width = 45;  // Reduced from 60 for fairer hitbox
+        this.height = 45; // Reduced from 60 for fairer hitbox
         this.hit = false;
         this.shootTimer = 0;
         this.shootInterval = getDifficulty().shootInterval;
@@ -597,8 +597,8 @@ class FlyingMonster {
     constructor(x, y) {
         this.x = x;
         this.y = y;
-        this.width = 70;  // Increased from 50
-        this.height = 70; // Increased from 50
+        this.width = 55;  // Reduced from 70 for fairer hitbox
+        this.height = 55; // Reduced from 70 for fairer hitbox
         this.speed = 1.5 + Math.random() * 1.5; // Slower speed between 1.5-3 (was 2-4)
         this.direction = Math.random() < 0.5 ? -1 : 1; // Random initial direction
         this.animFrame = 0;
@@ -1079,10 +1079,19 @@ function gameLoop() {
         platformsGenerated++;
     }
     
-    // Remove objects that have fallen below the screen
-    gameState.platforms = gameState.platforms.filter(p => p.y < gameState.camera.y + config.height + 100);
-    gameState.obstacles = gameState.obstacles.filter(o => o.y < gameState.camera.y + config.height + 100);
-    gameState.powerUps = gameState.powerUps.filter(p => p.y < gameState.camera.y + config.height + 100);
+    // Remove objects that have fallen below the screen OR are too far above
+    gameState.platforms = gameState.platforms.filter(p => 
+        p.y < gameState.camera.y + config.height + 100 && 
+        p.y > gameState.camera.y - config.height * 2
+    );
+    gameState.obstacles = gameState.obstacles.filter(o => 
+        o.y < gameState.camera.y + config.height + 100 && 
+        o.y > gameState.camera.y - config.height * 2
+    );
+    gameState.powerUps = gameState.powerUps.filter(p => 
+        p.y < gameState.camera.y + config.height + 100 && 
+        p.y > gameState.camera.y - config.height * 2
+    );
     gameState.projectiles = gameState.projectiles.filter(p => p.y < gameState.camera.y + config.height + 100 && p.active);
     gameState.playerBullets = gameState.playerBullets.filter(b => b.active);
     

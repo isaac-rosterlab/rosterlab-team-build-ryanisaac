@@ -1,0 +1,33 @@
+{
+  "name": "RosterLab Team Building Jump Game",
+  "short_name": "RosterJump",
+  "description": "A fun jumping game with roster management themes",
+  "start_url": "/",
+  "display": "fullscreen",
+  "orientation": "portrait",
+  "background_color": "#FAFAFA",
+  "theme_color": "#4A90E2",
+  "icons": [
+    {
+      "src": "Images/icons/icon.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "Images/icons/icon.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["games", "entertainment"],
+  "screenshots": [
+    {
+      "src": "screenshot1.png",
+      "sizes": "450x700",
+      "type": "image/png",
+      "form_factor": "narrow"
+    }
+  ]
+}
