@@ -28,6 +28,9 @@ let gameState = {
     keys: {},
     tilt: 0,
     mouseX: 0,
+    touchX: 0,
+    touchStartX: 0,
+    isDragging: false,
     isMobile: false,
     doubleJumpActive: false,
     doubleJumpTimer: 0
@@ -82,13 +85,12 @@ class Player {
         
         // Apply movement
         if (gameState.isMobile) {
-            // Mobile: use tilt controls
-            if (gameState.tilt < -0.1) {
-                this.vx = -config.moveSpeed;
-                this.facing = -1;
-            } else if (gameState.tilt > 0.1) {
-                this.vx = config.moveSpeed;
-                this.facing = 1;
+            // Mobile: use touch drag controls
+            if (gameState.isDragging) {
+                const dragDiff = gameState.touchX - gameState.touchStartX;
+                const sensitivity = 0.02; // Adjust sensitivity
+                this.vx = Math.max(-config.moveSpeed, Math.min(config.moveSpeed, dragDiff * sensitivity));
+                this.facing = dragDiff > 0 ? 1 : -1;
             } else {
                 this.vx *= 0.8;
             }
@@ -775,13 +777,47 @@ function init() {
     
     // Touch controls for mobile
     if (gameState.isMobile) {
-        // Touch to shoot
+        let touchStartTime = 0;
+        
+        // Touch start - begin drag or prepare to shoot
         canvas.addEventListener('touchstart', (e) => {
             e.preventDefault();
-            if (gameState.gameRunning && gameState.player && gameState.player.shootCooldown === 0) {
+            const touch = e.touches[0];
+            const rect = canvas.getBoundingClientRect();
+            const scaleX = canvas.width / rect.width;
+            
+            gameState.touchStartX = (touch.clientX - rect.left) * scaleX;
+            gameState.touchX = gameState.touchStartX;
+            gameState.isDragging = true;
+            touchStartTime = Date.now();
+        });
+        
+        // Touch move - drag to control movement
+        canvas.addEventListener('touchmove', (e) => {
+            e.preventDefault();
+            if (gameState.isDragging) {
+                const touch = e.touches[0];
+                const rect = canvas.getBoundingClientRect();
+                const scaleX = canvas.width / rect.width;
+                
+                gameState.touchX = (touch.clientX - rect.left) * scaleX;
+            }
+        });
+        
+        // Touch end - shoot if it was a quick tap, stop dragging
+        canvas.addEventListener('touchend', (e) => {
+            e.preventDefault();
+            const touchDuration = Date.now() - touchStartTime;
+            const dragDistance = Math.abs(gameState.touchX - gameState.touchStartX);
+            
+            // If it was a quick tap (< 200ms) and minimal drag (< 20px), shoot
+            if (touchDuration < 200 && dragDistance < 20 && 
+                gameState.gameRunning && gameState.player && gameState.player.shootCooldown === 0) {
                 gameState.player.shoot();
                 gameState.player.shootCooldown = gameState.player.shootCooldownMax;
             }
+            
+            gameState.isDragging = false;
         });
         
         // Prevent scrolling on mobile
@@ -792,36 +828,7 @@ function init() {
         }, { passive: false });
     }
     
-    // Remove old mobile button code since we're using tilt
-    
-    // Accelerometer for mobile (with iOS permission request)
-    if (window.DeviceOrientationEvent) {
-        // Check if we need permission (iOS 13+)
-        if (typeof DeviceOrientationEvent.requestPermission === 'function') {
-            // iOS 13+ requires permission
-            const requestPermission = () => {
-                DeviceOrientationEvent.requestPermission()
-                    .then(response => {
-                        if (response === 'granted') {
-                            window.addEventListener('deviceorientation', handleOrientation);
-                        }
-                    })
-                    .catch(console.error);
-            };
-            
-            // Request permission on first touch
-            window.addEventListener('touchstart', requestPermission, { once: true });
-        } else {
-            // Non-iOS devices
-            window.addEventListener('deviceorientation', handleOrientation);
-        }
-    }
-    
-    function handleOrientation(e) {
-        if (e.gamma !== null) {
-            gameState.tilt = Math.max(-1, Math.min(1, e.gamma / 20)); // More sensitive
-        }
-    }
+    // Touch drag controls implemented above - no tilt needed
     
     // Intro screen is shown by default
 }
@@ -829,19 +836,6 @@ function init() {
 // Start game from intro screen
 function startGameFromIntro() {
     document.getElementById('introScreen').classList.add('hide');
-    
-    // Request iOS orientation permission if needed
-    if (gameState.isMobile && typeof DeviceOrientationEvent.requestPermission === 'function') {
-        DeviceOrientationEvent.requestPermission()
-            .then(response => {
-                if (response === 'granted') {
-                    window.addEventListener('deviceorientation', handleOrientation);
-                } else {
-                    alert('Tilt controls disabled. Use touch to move.');
-                }
-            })
-            .catch(console.error);
-    }
     
     // Use demo roster data by default
     gameState.rosterData = [
@@ -1106,7 +1100,6 @@ function gameLoop() {
     }
     
     // Draw difficulty indicator
-    const difficulty = getDifficulty();
     let difficultyText = 'Easy';
     let difficultyColor = '#4CAF50';
     
@@ -1134,7 +1127,7 @@ function gameLoop() {
         ctx.textAlign = 'center';
         
         if (gameState.isMobile) {
-            ctx.fillText('Tilt to move • Tap to shoot', config.width / 2, config.height - 20);
+            ctx.fillText('Drag to move • Tap to shoot', config.width / 2, config.height - 20);
         } else {
             ctx.fillText('Mouse to move • Click or Space to shoot', config.width / 2, config.height - 20);
         }
