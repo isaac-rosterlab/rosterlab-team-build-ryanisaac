@@ -27,6 +27,8 @@ let gameState = {
     rosterData: [],
     keys: {},
     tilt: 0,
+    mouseX: 0,
+    isMobile: false,
     doubleJumpActive: false,
     doubleJumpTimer: 0
 };
@@ -79,14 +81,37 @@ class Player {
         }
         
         // Apply movement
-        if (gameState.keys.ArrowLeft || gameState.keys.a || gameState.keys.A || gameState.tilt < -0.1) {
-            this.vx = -config.moveSpeed;
-            this.facing = -1;
-        } else if (gameState.keys.ArrowRight || gameState.keys.d || gameState.keys.D || gameState.tilt > 0.1) {
-            this.vx = config.moveSpeed;
-            this.facing = 1;
+        if (gameState.isMobile) {
+            // Mobile: use tilt controls
+            if (gameState.tilt < -0.1) {
+                this.vx = -config.moveSpeed;
+                this.facing = -1;
+            } else if (gameState.tilt > 0.1) {
+                this.vx = config.moveSpeed;
+                this.facing = 1;
+            } else {
+                this.vx *= 0.8;
+            }
         } else {
-            this.vx *= 0.8;
+            // Desktop: use mouse position
+            const playerCenterX = this.x + this.width / 2;
+            const mouseDiff = gameState.mouseX - playerCenterX;
+            
+            if (Math.abs(mouseDiff) > 5) { // Dead zone of 5 pixels
+                this.vx = Math.max(-config.moveSpeed, Math.min(config.moveSpeed, mouseDiff * 0.1));
+                this.facing = mouseDiff > 0 ? 1 : -1;
+            } else {
+                this.vx *= 0.8;
+            }
+            
+            // Also support keyboard as fallback
+            if (gameState.keys.ArrowLeft || gameState.keys.a || gameState.keys.A) {
+                this.vx = -config.moveSpeed;
+                this.facing = -1;
+            } else if (gameState.keys.ArrowRight || gameState.keys.d || gameState.keys.D) {
+                this.vx = config.moveSpeed;
+                this.facing = 1;
+            }
         }
         
         // Update shoot cooldown
@@ -729,6 +754,10 @@ function init() {
     resizeCanvas();
     window.addEventListener('resize', resizeCanvas);
     
+    // Detect mobile
+    gameState.isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || 
+                        ('ontouchstart' in window);
+    
     // Input handlers
     window.addEventListener('keydown', (e) => {
         gameState.keys[e.key] = true;
@@ -738,16 +767,43 @@ function init() {
         gameState.keys[e.key] = false;
     });
     
-    // Mobile controls
-    const leftBtn = document.getElementById('leftBtn');
-    const rightBtn = document.getElementById('rightBtn');
-    
-    if (leftBtn && rightBtn) {
-        leftBtn.addEventListener('touchstart', () => gameState.tilt = -1);
-        leftBtn.addEventListener('touchend', () => gameState.tilt = 0);
-        rightBtn.addEventListener('touchstart', () => gameState.tilt = 1);
-        rightBtn.addEventListener('touchend', () => gameState.tilt = 0);
+    // Mouse movement for desktop
+    if (!gameState.isMobile) {
+        canvas.addEventListener('mousemove', (e) => {
+            const rect = canvas.getBoundingClientRect();
+            const scaleX = canvas.width / rect.width;
+            gameState.mouseX = (e.clientX - rect.left) * scaleX;
+        });
+        
+        // Click to shoot on desktop
+        canvas.addEventListener('click', () => {
+            if (gameState.gameRunning && gameState.player) {
+                gameState.player.shoot();
+                gameState.player.shootCooldown = gameState.player.shootCooldownMax;
+            }
+        });
     }
+    
+    // Touch controls for mobile
+    if (gameState.isMobile) {
+        // Touch to shoot
+        canvas.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            if (gameState.gameRunning && gameState.player && gameState.player.shootCooldown === 0) {
+                gameState.player.shoot();
+                gameState.player.shootCooldown = gameState.player.shootCooldownMax;
+            }
+        });
+        
+        // Prevent scrolling on mobile
+        document.body.addEventListener('touchmove', (e) => {
+            if (e.target === canvas) {
+                e.preventDefault();
+            }
+        }, { passive: false });
+    }
+    
+    // Remove old mobile button code since we're using tilt
     
     // Accelerometer for mobile
     if (window.DeviceOrientationEvent) {
@@ -1047,6 +1103,20 @@ function gameLoop() {
     ctx.textAlign = 'right';
     ctx.fillText('Difficulty: ' + difficultyText, config.width - 10, 20);
     ctx.textAlign = 'left';
+    
+    // Show controls hint for first 5 seconds
+    if (gameState.score < 10) {
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
+        ctx.font = '11px Arial';
+        ctx.textAlign = 'center';
+        
+        if (gameState.isMobile) {
+            ctx.fillText('Tilt to move • Tap to shoot', config.width / 2, config.height - 20);
+        } else {
+            ctx.fillText('Mouse to move • Click or Space to shoot', config.width / 2, config.height - 20);
+        }
+        ctx.textAlign = 'left';
+    }
     
     animationId = requestAnimationFrame(gameLoop);
 }
