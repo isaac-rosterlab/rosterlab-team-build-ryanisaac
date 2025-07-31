@@ -2,10 +2,10 @@
 const config = {
     width: 400,
     height: 600,
-    gravity: 0.5,
-    jumpPower: -15,
-    moveSpeed: 3.5, // Reduced from 5 to make player slower
-    platformGap: 70,
+    gravity: 0.4,      // Reduced from 0.5 for slower fall
+    jumpPower: -13,    // Reduced from -15 for lower jumps
+    moveSpeed: 3,      // Further reduced from 3.5
+    platformGap: 65,   // Reduced gap to make it slightly easier
     cellSize: 60,
     gridLineColor: '#e0e0e0',
     darkGridLineColor: '#cccccc'
@@ -217,9 +217,9 @@ class Player {
             }
         }
         
-        // Update camera (only moves up, never down)
-        if (this.y < gameState.camera.y + 200) {
-            gameState.camera.y = this.y - 200;
+        // Update camera (only moves up, never down) - player positioned lower for better view ahead
+        if (this.y < gameState.camera.y + 350) {
+            gameState.camera.y = this.y - 350;
         }
         
         // Track max height reached
@@ -304,8 +304,8 @@ class Platform {
         this.moveSpeed = 1.5;
         this.originalX = x;
         
-        // Platform has power-up if it's a moving platform
-        this.hasPowerUp = type === 'moving' && Math.random() < 0.5;
+        // Platform has power-up if it's a moving platform (reduced chance)
+        this.hasPowerUp = type === 'moving' && Math.random() < 0.2; // Only 20% of moving platforms have power-ups
     }
     
     update() {
@@ -389,8 +389,8 @@ class Obstacle {
         this.x = x;
         this.y = y;
         this.type = type;
-        this.width = 40;
-        this.height = 40;
+        this.width = 60;  // Increased from 40
+        this.height = 60; // Increased from 40
         this.hit = false;
         this.shootTimer = 0;
         this.shootInterval = getDifficulty().shootInterval;
@@ -590,9 +590,9 @@ class FlyingMonster {
     constructor(x, y) {
         this.x = x;
         this.y = y;
-        this.width = 50;
-        this.height = 50;
-        this.speed = 2 + Math.random() * 2; // Random speed between 2-4
+        this.width = 70;  // Increased from 50
+        this.height = 70; // Increased from 50
+        this.speed = 1.5 + Math.random() * 1.5; // Slower speed between 1.5-3 (was 2-4)
         this.direction = Math.random() < 0.5 ? -1 : 1; // Random initial direction
         this.animFrame = 0;
         this.animTimer = 0;
@@ -949,8 +949,8 @@ function generatePlatform(y) {
     if (Math.random() < difficulty.monsterChance && y < config.height - 200) {
         const type = difficulty.monsterTypes[Math.floor(Math.random() * difficulty.monsterTypes.length)];
         const obstacle = new Obstacle(
-            Math.random() * (config.width - 40),
-            y - 50,
+            Math.random() * (config.width - 60),
+            y - 70,
             type
         );
         gameState.obstacles.push(obstacle);
@@ -974,8 +974,8 @@ function getDifficulty() {
     return {
         // Monster spawn chance: starts at 5%, maxes out at 20%
         monsterChance: Math.min(0.05 + (score / 1000) * 0.15, 0.20),
-        // Power-up chance: starts at 20%, decreases to 10% (more power-ups for better gameplay)
-        powerUpChance: Math.max(0.20 - (score / 1000) * 0.10, 0.10),
+        // Power-up chance: starts at 8%, decreases to 3% (much less power-ups for skill-based gameplay)
+        powerUpChance: Math.max(0.08 - (score / 1000) * 0.05, 0.03),
         // Shooting interval: starts at 180 frames (3 sec), decreases to 60 frames (1 sec)
         shootInterval: Math.max(180 - (score / 500) * 120, 60),
         // Monster types: more dangerous types appear as you progress
