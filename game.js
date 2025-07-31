@@ -85,12 +85,17 @@ class Player {
         
         // Apply movement
         if (gameState.isMobile) {
-            // Mobile: use touch drag controls
+            // Mobile: character follows thumb position
             if (gameState.isDragging) {
-                const dragDiff = gameState.touchX - gameState.touchStartX;
-                const sensitivity = 0.02; // Adjust sensitivity
-                this.vx = Math.max(-config.moveSpeed, Math.min(config.moveSpeed, dragDiff * sensitivity));
-                this.facing = dragDiff > 0 ? 1 : -1;
+                const playerCenterX = this.x + this.width / 2;
+                const touchDiff = gameState.touchX - playerCenterX;
+                
+                if (Math.abs(touchDiff) > 10) { // Dead zone of 10 pixels
+                    this.vx = Math.max(-config.moveSpeed, Math.min(config.moveSpeed, touchDiff * 0.15));
+                    this.facing = touchDiff > 0 ? 1 : -1;
+                } else {
+                    this.vx *= 0.8;
+                }
             } else {
                 this.vx *= 0.8;
             }
