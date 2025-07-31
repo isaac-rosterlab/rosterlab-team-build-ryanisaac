@@ -4,7 +4,7 @@ const config = {
     height: 600,
     gravity: 0.5,
     jumpPower: -15,
-    moveSpeed: 5,
+    moveSpeed: 3.5, // Reduced from 5 to make player slower
     platformGap: 70,
     cellSize: 60,
     gridLineColor: '#e0e0e0',
@@ -194,12 +194,15 @@ class Player {
                 this.y + this.height > powerUp.y) {
                 
                 if (powerUp.type === 'movac') {
-                    // 10% boost with smooth animation
-                    this.boostVelocity = -8; // Moderate boost speed
+                    // 25% boost with smooth animation (more significant)
+                    this.boostVelocity = -15; // Significant boost speed
+                    gameState.score += 10; // Bonus points for movac
                 } else if (powerUp.type === 'rosterlab') {
                     // 60% boost with smooth animation
-                    this.boostVelocity = -20; // Strong boost speed
+                    this.boostVelocity = -25; // Very strong boost speed
+                    gameState.score += 20; // Bonus points for rosterlab
                 }
+                updateScore();
                 
                 gameState.powerUps.splice(i, 1);
                 playSound('powerup');
@@ -247,12 +250,12 @@ class Player {
         // Limit total player bullets to prevent memory issues
         if (gameState.playerBullets.length > 20) return;
         
-        // Create bullet going upward
+        // Create bullet going upward from top of player
         const bullet = new PlayerBullet(
             this.x + this.width / 2 - 3,
-            this.y - 5,
+            this.y - 10, // Start from top of player sprite
             0,
-            -8
+            -12 // Faster bullet speed (was -8)
         );
         gameState.playerBullets.push(bullet);
         playSound('shoot');
@@ -392,13 +395,17 @@ class Obstacle {
         this.shootTimer = 0;
         this.shootInterval = getDifficulty().shootInterval;
         
-        // Load monster image
+        // Load monster image (alternate between two images)
         if (type !== 'hole') {
             this.image = new Image();
-            this.image.src = 'Images/Monsters/4444798.webp';
+            const useAlternateImage = Math.random() < 0.5;
+            this.image.src = useAlternateImage ? 'Images/Monsters/images.jpg' : 'Images/Monsters/IMG_5377.png';
             this.imageLoaded = false;
             this.image.onload = () => {
                 this.imageLoaded = true;
+            };
+            this.image.onerror = () => {
+                console.error('Failed to load monster image:', this.image.src);
             };
         }
     }
@@ -591,12 +598,16 @@ class FlyingMonster {
         this.animTimer = 0;
         this.active = true;
         
-        // Load flying monster image
+        // Load flying monster image (alternate between two images)
         this.image = new Image();
-        this.image.src = 'IMG_5377.png';
+        const useAlternateImage = Math.random() < 0.5;
+        this.image.src = useAlternateImage ? 'Images/Monsters/images.jpg' : 'Images/Monsters/IMG_5377.png';
         this.imageLoaded = false;
         this.image.onload = () => {
             this.imageLoaded = true;
+        };
+        this.image.onerror = () => {
+            console.error('Failed to load flying monster image:', this.image.src);
         };
     }
     
@@ -662,28 +673,6 @@ class FlyingMonster {
             } else {
                 ctx.drawImage(this.image, this.x, this.y, this.width, this.height);
             }
-        } else {
-            // Fallback shape
-            ctx.fillStyle = '#8B008B';
-            ctx.beginPath();
-            ctx.ellipse(this.x + this.width/2, this.y + this.height/2, 
-                        this.width/2, this.height/3, 0, 0, Math.PI * 2);
-            ctx.fill();
-            
-            // Wings animation
-            const wingOffset = this.animFrame * 5;
-            ctx.fillStyle = '#4B0082';
-            ctx.beginPath();
-            ctx.moveTo(this.x + this.width/2, this.y + this.height/2);
-            ctx.lineTo(this.x - 10, this.y + this.height/2 - wingOffset);
-            ctx.lineTo(this.x, this.y + this.height/2 + 10);
-            ctx.fill();
-            
-            ctx.beginPath();
-            ctx.moveTo(this.x + this.width/2, this.y + this.height/2);
-            ctx.lineTo(this.x + this.width + 10, this.y + this.height/2 - wingOffset);
-            ctx.lineTo(this.x + this.width, this.y + this.height/2 + 10);
-            ctx.fill();
         }
         
         ctx.restore();
@@ -805,13 +794,33 @@ function init() {
     
     // Remove old mobile button code since we're using tilt
     
-    // Accelerometer for mobile
+    // Accelerometer for mobile (with iOS permission request)
     if (window.DeviceOrientationEvent) {
-        window.addEventListener('deviceorientation', (e) => {
-            if (e.gamma !== null) {
-                gameState.tilt = Math.max(-1, Math.min(1, e.gamma / 30));
-            }
-        });
+        // Check if we need permission (iOS 13+)
+        if (typeof DeviceOrientationEvent.requestPermission === 'function') {
+            // iOS 13+ requires permission
+            const requestPermission = () => {
+                DeviceOrientationEvent.requestPermission()
+                    .then(response => {
+                        if (response === 'granted') {
+                            window.addEventListener('deviceorientation', handleOrientation);
+                        }
+                    })
+                    .catch(console.error);
+            };
+            
+            // Request permission on first touch
+            window.addEventListener('touchstart', requestPermission, { once: true });
+        } else {
+            // Non-iOS devices
+            window.addEventListener('deviceorientation', handleOrientation);
+        }
+    }
+    
+    function handleOrientation(e) {
+        if (e.gamma !== null) {
+            gameState.tilt = Math.max(-1, Math.min(1, e.gamma / 20)); // More sensitive
+        }
     }
     
     // Intro screen is shown by default
@@ -965,8 +974,8 @@ function getDifficulty() {
     return {
         // Monster spawn chance: starts at 5%, maxes out at 20%
         monsterChance: Math.min(0.05 + (score / 1000) * 0.15, 0.20),
-        // Power-up chance: starts at 15%, decreases to 8%
-        powerUpChance: Math.max(0.15 - (score / 1000) * 0.07, 0.08),
+        // Power-up chance: starts at 20%, decreases to 10% (more power-ups for better gameplay)
+        powerUpChance: Math.max(0.20 - (score / 1000) * 0.10, 0.10),
         // Shooting interval: starts at 180 frames (3 sec), decreases to 60 frames (1 sec)
         shootInterval: Math.max(180 - (score / 500) * 120, 60),
         // Monster types: more dangerous types appear as you progress

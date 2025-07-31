@@ -243,6 +243,13 @@
             display: block;
         }
         
+        #gameOver img {
+            max-width: 200px;
+            height: auto;
+            margin-bottom: 20px;
+            border-radius: 10px;
+        }
+        
         #gameOver h2 {
             color: #ff4444;
             margin-bottom: 15px;
@@ -309,12 +316,12 @@
     <div id="introScreen">
         <div class="intro-content">
             <div class="logo-section">
-                <img src="https://rosterlab.com/_next/image?url=%2Fimages%2Frosterlab-logo.png&w=384&q=75" alt="RosterLab" crossorigin="anonymous">
+                <img src="Images/rosterlab logo/logo.png.jpeg" alt="RosterLab">
             </div>
             <h1 class="game-title">Roster Jump</h1>
             <p class="game-subtitle">The ultimate healthcare rostering challenge!</p>
             <div class="game-preview">
-                <img src="start.png" alt="Roster Jump Game Preview">
+                <img src="Images/start screen/start.png" alt="Roster Jump Game Preview">
             </div>
             <div class="intro-buttons">
                 <button class="intro-btn intro-btn-primary" onclick="startGameFromIntro()">
@@ -341,6 +348,7 @@
     <!-- Roster modal removed - game starts directly -->
     
     <div id="gameOver">
+        <img src="Images/death/Image (2).jpeg" alt="Game Over">
         <h2>Roster Pitfall!</h2>
         <p>Score: <span id="finalScore">0</span> Completed Shifts</p>
         <button class="btn btn-primary" onclick="restartGame()">Back to Menu</button>
